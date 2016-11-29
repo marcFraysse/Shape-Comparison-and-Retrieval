@@ -9,7 +9,7 @@ public class MeshViewer extends PApplet {
 	//String filename="OFF/high_genus.off";
 	//String filename="OFF/sphere.off";
 	//String filename="OFF/cube.off";
-	String filename="OFF/models/head-poses/head-01-anger.obj";
+	String filename="OFF/MeshsegBenchmark-1.0/data/off/1.off";
 	//String filename="OFF/tore.off";
 	//String filename="OFF/tri_round_cube.off";
 	//String filename="OFF/tri_hedra.off";
