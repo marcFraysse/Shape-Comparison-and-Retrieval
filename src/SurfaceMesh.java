@@ -62,6 +62,8 @@ public class SurfaceMesh {
 		HashMap<Integer,Double> aires = new HashMap<>();
 		ArrayList<Vertex<Point_3>> vertices = polyhedron3D.vertices;
 		int count = 0;
+		HashMap<Vertex<Point_3>,ArrayList<Vertex<Point_3>>> neighboursHash = new HashMap<>();
+
 		for (Vertex<Point_3> v : vertices) {
 			ArrayList<Vertex<Point_3>> neighbours = new ArrayList<>();
 			Halfedge<Point_3> baseHalfedge = v.getHalfedge();
@@ -74,19 +76,21 @@ public class SurfaceMesh {
 			for(int j = 0; j < neighbours.size(); j++) {
 				m[count][j]=neighbours.get(j).index; //il faut bien mettre les indices pour lesquels la matrice sera non nuls ici (Les valeurs non nulles de la matrices sont toutes celles dont les indices sont (count, index))
 			}
+			neighboursHash.put(v, neighbours);
 			count++;
 		}
 		M = new CompRowMatrix(n,n,m);
 		
 		for (Vertex<Point_3> v : vertices) {
-			ArrayList<Vertex<Point_3>> neighbours = new ArrayList<>();
+//			ArrayList<Vertex<Point_3>> neighbours = new ArrayList<>();
 			ArrayList<Point_3> circumcenters = new ArrayList<>();
-			Halfedge<Point_3> baseHalfedge = v.getHalfedge();
-			Halfedge<Point_3> currentHalfedge = v.getHalfedge();
-			while (baseHalfedge != currentHalfedge || neighbours.size() == 0) {
-				neighbours.add(currentHalfedge.getVertex());
-				currentHalfedge = currentHalfedge.getOpposite().getNext();
-			}
+//			Halfedge<Point_3> baseHalfedge = v.getHalfedge();
+//			Halfedge<Point_3> currentHalfedge = v.getHalfedge();
+//			while (baseHalfedge != currentHalfedge || neighbours.size() == 0) {
+//				neighbours.add(currentHalfedge.getVertex());
+//				currentHalfedge = currentHalfedge.getOpposite().getNext();
+//			}
+			ArrayList<Vertex<Point_3>> neighbours = neighboursHash.get(v);
 			for (int i = 0; i < neighbours.size(); i++) {
 				//Compute the angle with the prev point
 				Vertex<Point_3> current = neighbours.get(i);				
@@ -127,7 +131,7 @@ public class SurfaceMesh {
 			aires.put(v.index, aire);
 		}
 		
-		CompRowMatrix L = new CompRowMatrix(polyhedron3D.vertices.size(), polyhedron3D.vertices.size(), null);
+		//CompRowMatrix L = new CompRowMatrix(polyhedron3D.vertices.size(), polyhedron3D.vertices.size(), null);
 		for (int i = 0; i < polyhedron3D.vertices.size(); i++) {
 			//aires.get(i); //si
 			//M.get(i, j); //mi,j
