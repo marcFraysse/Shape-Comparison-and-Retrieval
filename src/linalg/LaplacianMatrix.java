@@ -3,11 +3,8 @@ package linalg;
 import java.util.Collection;
 
 import Jcg.graph.arraybased.ArrayBasedGraph;
-import cern.colt.matrix.tdouble.DoubleMatrix2D;
-import cern.colt.matrix.tdouble.impl.SparseDoubleMatrix2D;
 import linalg.JamaMatrices.JamaMatrix;
 import linalg.MTJ.*;
-import linalg.PColt.PColtMatrix;
 import no.uib.cipr.matrix.sparse.CompRowMatrix;
 
 public class LaplacianMatrix {
@@ -72,30 +69,30 @@ public class LaplacianMatrix {
 	}
 
 	/**
-	 * Create the Laplacian matrix of a graph (with n vertices)
-	 * (not efficient implementation: it takes nxn time)
-	 * 
-	 * @param g
-	 * 			the input graph
-	 */	
-	public static PColtMatrix computePColt(ArrayBasedGraph g) {
-		DoubleMatrix2D A; // (sparse) matrix implementation based on Parallel Colt library
-		int n=g.sizeVertices(); // matrix size
-		System.out.print("Creating Laplacian matrix from a graph of size "+n+" (using Parallel Colt library)...");
-		
-		A=new SparseDoubleMatrix2D(n, n); // create a sparse matrix of size nxn
-
-		for(int i=0;i<g.sizeVertices();i++) {
-			A.setQuick(i, i, g.degree(i)); // set diagonal entries
-			Collection<Integer> neighbors=g.neighbors(i); // neighbors of vertex i
-			for(Integer j: neighbors) {
-				A.setQuick(i, j, -1.);
-				A.setQuick(j, i, -1.);
-			}
-	   	}
-		System.out.println("done");
-		
-		return new PColtMatrix(A);
-	}
+//	 * Create the Laplacian matrix of a graph (with n vertices)
+//	 * (not efficient implementation: it takes nxn time)
+//	 * 
+//	 * @param g
+//	 * 			the input graph
+//	 */	
+//	public static PColtMatrix computePColt(ArrayBasedGraph g) {
+//		DoubleMatrix2D A; // (sparse) matrix implementation based on Parallel Colt library
+//		int n=g.sizeVertices(); // matrix size
+//		System.out.print("Creating Laplacian matrix from a graph of size "+n+" (using Parallel Colt library)...");
+//		
+//		A=new SparseDoubleMatrix2D(n, n); // create a sparse matrix of size nxn
+//
+//		for(int i=0;i<g.sizeVertices();i++) {
+//			A.setQuick(i, i, g.degree(i)); // set diagonal entries
+//			Collection<Integer> neighbors=g.neighbors(i); // neighbors of vertex i
+//			for(Integer j: neighbors) {
+//				A.setQuick(i, j, -1.);
+//				A.setQuick(j, i, -1.);
+//			}
+//	   	}
+//		System.out.println("done");
+//		
+//		return new PColtMatrix(A);
+//	}
 
 }

@@ -9,7 +9,7 @@ public class MeshViewer extends PApplet {
 	//String filename="OFF/high_genus.off";
 	//String filename="OFF/sphere.off";
 	//String filename="OFF/cube.off";
-	String filename="OFF/MeshsegBenchmark-1.0/data/off/1.off";
+	String filename="MeshsegBenchmark-1.0/MeshsegBenchmark-1.0/data/off/22.off";
 	//String filename="OFF/tore.off";
 	//String filename="OFF/tri_round_cube.off";
 	//String filename="OFF/tri_hedra.off";
@@ -19,9 +19,10 @@ public class MeshViewer extends PApplet {
 		  size(800,600,P3D);
 		  ArcBall arcball = new ArcBall(this);
 		  
-		  this.mesh=new SurfaceMesh(this, filename);
-		  MeshSimplification ms=new HalfedgeContraction(this.mesh.polyhedron3D);
+		  this.mesh=new SurfaceMesh(this, filename);	
 		  
+		  this.mesh.compute();
+
 		  //ms.simplify();
 	}
 		 
@@ -39,7 +40,7 @@ public class MeshViewer extends PApplet {
 		  this.strokeWeight(1);
 		  stroke(150,150,150);
 		  
-		  this.mesh.draw();
+		  this.mesh.draw(1);
 		}
 		
 		/**
