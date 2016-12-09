@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import Jcg.geometry.*;
 import Jcg.mesh.SharedVertexRepresentation;
@@ -39,14 +40,14 @@ public class SurfaceMesh {
     	this.scaleFactor=this.computeScaleFactor();
 	}
 	
-	public Vertex<Point_3> next(int pos, ArrayList<Vertex<Point_3>> neighbours) {
+	public Object next(int pos, ArrayList<?> neighbours) {
 		if (pos == neighbours.size() - 1)
 			return neighbours.get(0);
 		else
 			return neighbours.get(pos + 1);
 	}
 	
-	public Vertex<Point_3> prev(int pos, ArrayList<Vertex<Point_3>> neighbours) {
+	public Object prev(int pos, ArrayList<?> neighbours) {
 		if (pos == 0)
 			return neighbours.get(neighbours.size() - 1);
 		else
@@ -54,7 +55,9 @@ public class SurfaceMesh {
 	}
 	
 	public void compute() {
-		CompRowMatrix M = new CompRowMatrix(polyhedron3D.vertices.size(), polyhedron3D.vertices.size(), null);
+		CompRowMatrix M = new CompRowMatrix(polyhedron3D.vertices.size(),1, new int[polyhedron3D.vertices.size()][0]);
+		M = M.zero();
+		HashMap<Integer,Double> aires = new HashMap<>();
 		ArrayList<Vertex<Point_3>> vertices = polyhedron3D.vertices;
 		for (Vertex<Point_3> v : vertices) {
 			ArrayList<Vertex<Point_3>> neighbours = new ArrayList<>();
@@ -68,14 +71,14 @@ public class SurfaceMesh {
 			for (int i = 0; i < neighbours.size(); i++) {
 				//Compute the angle with the prev point
 				Vertex<Point_3> current = neighbours.get(i);				
-				Vertex<Point_3> prev = prev(i, neighbours);
+				Vertex<Point_3> prev = (Vertex<Point_3>) prev(i, neighbours);
 				Vector_3 vecPrev1 = (Vector_3) prev.getPoint().minus(v.getPoint());
 				Vector_3 vecPrev2 = (Vector_3) prev.getPoint().minus(current.getPoint());
 				double cosAnglePrev = (double) vecPrev1.innerProduct(vecPrev2) / (Math.sqrt((double) vecPrev1.squaredLength() * (double) vecPrev2.squaredLength()));
 				double sinAnglePrev = (double) vecPrev1.crossProduct(vecPrev2).squaredLength() / (Math.sqrt((double) vecPrev1.squaredLength() * (double) vecPrev2.squaredLength()));
 				double cotAnglePrev = cosAnglePrev / sinAnglePrev;
 				//Compute the angle with the next point
-				Vertex<Point_3> next = next(i, neighbours);
+				Vertex<Point_3> next = (Vertex<Point_3>) next(i, neighbours);
 				Vector_3 vecNext1 = (Vector_3) next.getPoint().minus(v.getPoint());
 				Vector_3 vecNext2 = (Vector_3) next.getPoint().minus(current.getPoint());
 				double cosAngleNext = (double) vecNext1.innerProduct(vecNext2) / (Math.sqrt((double) vecNext1.squaredLength() * (double) vecNext2.squaredLength()));
@@ -96,16 +99,27 @@ public class SurfaceMesh {
 			}
 			double aire = 0;
 			for (int i = 0; i < circumcenters.size(); i++) {
-				
+				double a = Math.sqrt((double) v.getPoint().minus(circumcenters.get(i)).squaredLength());
+				double b = Math.sqrt((double) v.getPoint().minus((Point_3) next(i,circumcenters)).squaredLength());
+				double c = Math.sqrt((double) circumcenters.get(i).minus((Point_3) next(i,circumcenters)).squaredLength());
+				double p = 1/2*(a+b+c);
+				aire += 1/4 * Math.sqrt(p*(p-a)*(p-b)*(p-c));
 			}
+			aires.put(v.index, aire);
 		}
 		
 		CompRowMatrix L = new CompRowMatrix(polyhedron3D.vertices.size(), polyhedron3D.vertices.size(), null);
-		
+		for (int i = 0; i < polyhedron3D.vertices.size(); i++) {
+			aires.get(i); //si
+			M.get(i, j); //mi,j
+			//for (int j )
+			//L.set();
+		}
 		
 		MTJSparseMatrix Laplacian = new MTJSparseMatrix(L);
 		MTJSparseEigenSolver Solver = new MTJSparseEigenSolver(Laplacian);
-		
+		Solver.computeEigenvalueDecomposition(20); //le nombre de v propres qu'on veut
+		double[] eigenvalues = Solver.getEigenvalues();
 	}
 	
 	/**
