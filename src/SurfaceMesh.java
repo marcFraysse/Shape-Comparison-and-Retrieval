@@ -51,7 +51,7 @@ public class SurfaceMesh {
 		int count = 0;
 		HashMap<Vertex<Point_3>,ArrayList<Vertex<Point_3>>> neighboursHash = new HashMap<>();
 
-		int nbEigen = 25;
+		int nbEigen = 5;
 		int n = polyhedron3D.vertices.size();
 		CompRowMatrix M;
 		int[][] m = new int[n][]; // indices of non-zero entries for each row
@@ -102,17 +102,15 @@ public class SurfaceMesh {
 
 				double pA1 = 0.5*(Math.sqrt(d02)+Math.sqrt(d12)+Math.sqrt(d22));
 				
-				double A1  = 0.25 * Math.sqrt(pA1*(pA1-d02)*(pA1-d12)*(pA1-d22));
-				
+				double A1  = Math.sqrt(pA1*(pA1-Math.sqrt(d02))*(pA1-Math.sqrt(d12))*(pA1-Math.sqrt(d22))); //using Heron's formula
 				
 				double pA2 = 0.5*(Math.sqrt(d02)+Math.sqrt(d32)+Math.sqrt(d42));
 				
-				double A2  = 0.25 * Math.sqrt(pA2*(pA2-d02)*(pA2-d32)*(pA2-d42));
+				double A2  = Math.sqrt(pA2*(pA2-Math.sqrt(d02))*(pA2-Math.sqrt(d32))*(pA2-Math.sqrt(d42)));
 				
-				double wij = 1/(8*A1)*(d02-d12-d22)+1/(8*A2)*(d02-d32-d42);
+				double wij = (1/(8*A1))*(d02-d12-d22)+(1/(8*A2))*(d02-d32-d42);
 				
 				M.set(v.index, current.index, wij);
-				System.out.println(v.index +" " + current.index);
 				aire += A1;
 
 							
@@ -138,7 +136,6 @@ public class SurfaceMesh {
 			}
 		}
 		
-		
 		MTJSparseMatrix Laplacian = new MTJSparseMatrix(L);
 		MTJSparseEigenSolver Solver = new MTJSparseEigenSolver(Laplacian);
 		Solver.computeEigenvalueDecomposition(nbEigen); 
@@ -147,6 +144,9 @@ public class SurfaceMesh {
 		
 		for(int i = 0; i<eigenvalues.length;i++){
 			System.out.println(eigenvalues[i]);
+		}
+		for(int i = 0; i<eigenvalues.length;i++){
+			System.out.println(eigenvectors[i][0]);
 		}
 		
 		

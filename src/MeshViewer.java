@@ -25,15 +25,17 @@ public class MeshViewer extends PApplet {
 		for(int i = 0; i<histo1.length;i++){
 			dist += Math.abs(histo1[i]-histo2[i]);
 		}
-		return 0;
+		return dist;
 	}
 	
 
 	public void setup() {
 		  size(800,600,P3D);
 		  ArcBall arcball = new ArcBall(this);
-		  
-		  this.comparison("OFF/MeshsegBenchmark-1.0/data/off/1.off","OFF/MeshsegBenchmark-1.0/data/off/102.off");
+		  double prox1 = this.comparison("OFF/MeshsegBenchmark-1.0/data/off/1.off","OFF/MeshsegBenchmark-1.0/data/off/102.off");
+		  double prox2 = this.comparison("OFF/MeshsegBenchmark-1.0/data/off/101.off","OFF/MeshsegBenchmark-1.0/data/off/102.off");
+		  System.out.println("proximity between 1 and 102 is : " + prox1);
+		  System.out.println("proximity between 101 and 102 is : " + prox2);
 
 	}
 
