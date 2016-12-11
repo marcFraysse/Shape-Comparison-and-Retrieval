@@ -62,6 +62,7 @@ public class SurfaceMesh {
 			ArrayList<Vertex<Point_3>> neighbours = new ArrayList<>();
 			Halfedge<Point_3> baseHalfedge = v.getHalfedge();
 			Halfedge<Point_3> currentHalfedge = v.getHalfedge();
+			currentHalfedge = currentHalfedge.getOpposite().getNext();//without this line, v is his own neighbour
 			while (baseHalfedge != currentHalfedge || neighbours.size() == 0) {
 				neighbours.add(currentHalfedge.getVertex());
 				currentHalfedge = currentHalfedge.getOpposite().getNext();
@@ -84,21 +85,25 @@ public class SurfaceMesh {
 
 			double aire =0;
 			for (int i = 0; i < neighbours.size(); i++) {
-				
 				Vertex<Point_3> current = neighbours.get(i);				
 				Vertex<Point_3> prev = (Vertex<Point_3>) prev(i, neighbours);
 				Vertex<Point_3> next = (Vertex<Point_3>) next(i, neighbours);
-
+				/*System.out.println(i);
+				System.out.println("v " + v.toString());
+				System.out.println("current " + current.toString());
+				System.out.println("prev " + prev.toString());
+				System.out.println("next " + next.toString());*/
 				
 				double d02 = (double)( v.getPoint().minus(current.getPoint()).squaredLength());
 				double d12 = (double)( v.getPoint().minus(prev.getPoint()).squaredLength());
 				double d22 = (double)( prev.getPoint().minus(current.getPoint()).squaredLength());
 				double d32 = (double)( v.getPoint().minus(next.getPoint()).squaredLength());
 				double d42 = (double)( next.getPoint().minus(current.getPoint()).squaredLength());
-				
+
 				double pA1 = 0.5*(Math.sqrt(d02)+Math.sqrt(d12)+Math.sqrt(d22));
 				
 				double A1  = 0.25 * Math.sqrt(pA1*(pA1-d02)*(pA1-d12)*(pA1-d22));
+				
 				
 				double pA2 = 0.5*(Math.sqrt(d02)+Math.sqrt(d32)+Math.sqrt(d42));
 				
@@ -107,6 +112,7 @@ public class SurfaceMesh {
 				double wij = 1/(8*A1)*(d02-d12-d22)+1/(8*A2)*(d02-d32-d42);
 				
 				M.set(v.index, current.index, wij);
+				System.out.println(v.index +" " + current.index);
 				aire += A1;
 
 							
@@ -167,7 +173,7 @@ public class SurfaceMesh {
 		}
 		
 		// get histogram
-		// we should get subsample, no same amout of points each time
+		// we should get subsample, no same amount of points each time
 		
 		double[] histogram = new double[100]; // we'll need to know the max dist between two points 
 		double maxdist = 10;
