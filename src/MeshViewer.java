@@ -25,7 +25,7 @@ public class MeshViewer extends PApplet {
 		for(int i = 0; i<histo1.length;i++){
 			dist += Math.abs(histo1[i]-histo2[i]);
 		}
-		return dist;
+		return 0;
 	}
 	
 
@@ -33,7 +33,7 @@ public class MeshViewer extends PApplet {
 		  size(800,600,P3D);
 		  ArcBall arcball = new ArcBall(this);
 		  
-		  this.comparison("OFF/MeshsegBenchmark-1.0/data/off/101.off","OFF/MeshsegBenchmark-1.0/data/off/102.off");
+		  this.comparison("OFF/MeshsegBenchmark-1.0/data/off/1.off","OFF/MeshsegBenchmark-1.0/data/off/102.off");
 
 	}
 

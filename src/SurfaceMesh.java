@@ -44,17 +44,21 @@ public class SurfaceMesh {
 
 	
 	
-	/* this function computes the eigenvalues and eigenvectors linked to a shape and then creates a disatnce histogram according to the methode described in the rustamov article*/
+	/* this function computes the eigenvalues and eigenvectors linked to a shape and then creates a distance histogram according to the method described in the rustamov article*/
 	public double[] compute() {
-		int n = polyhedron3D.vertices.size();
-		CompRowMatrix M;
-		int[][] m = new int[n][]; // indices of non-zero entries for each row
-		HashMap<Integer,Double> aires = new HashMap<>();
+
 		ArrayList<Vertex<Point_3>> vertices = polyhedron3D.vertices;
 		int count = 0;
 		HashMap<Vertex<Point_3>,ArrayList<Vertex<Point_3>>> neighboursHash = new HashMap<>();
 
+		int nbEigen = 25;
+		int n = polyhedron3D.vertices.size();
+		CompRowMatrix M;
+		int[][] m = new int[n][]; // indices of non-zero entries for each row
+		HashMap<Integer,Double> aires = new HashMap<>();
 		for (Vertex<Point_3> v : vertices) {
+			
+			
 			ArrayList<Vertex<Point_3>> neighbours = new ArrayList<>();
 			Halfedge<Point_3> baseHalfedge = v.getHalfedge();
 			Halfedge<Point_3> currentHalfedge = v.getHalfedge();
@@ -68,71 +72,58 @@ public class SurfaceMesh {
 				m[count][j]=neighbours.get(j).index; //il faut bien mettre les indices pour lesquels la matrice sera non nuls ici (Les valeurs non nulles de la matrices sont toutes celles dont les indices sont (count, index))
 			}
 			neighboursHash.put(v, neighbours);
+			
+			
 			count++;
 		}
 		M = new CompRowMatrix(n,n,m);
 		
-		for (Vertex<Point_3> v : vertices) {
-//			ArrayList<Vertex<Point_3>> neighbours = new ArrayList<>();
-			ArrayList<Point_3> circumcenters = new ArrayList<>();
-//			Halfedge<Point_3> baseHalfedge = v.getHalfedge();
-//			Halfedge<Point_3> currentHalfedge = v.getHalfedge();
-//			while (baseHalfedge != currentHalfedge || neighbours.size() == 0) {
-//				neighbours.add(currentHalfedge.getVertex());
-//				currentHalfedge = currentHalfedge.getOpposite().getNext();
-//			}
+		for (Vertex<Point_3> v : vertices) { 
+
 			ArrayList<Vertex<Point_3>> neighbours = neighboursHash.get(v);
-			
-			/*this part could have been simplified using the method described in lecture 8 : Area is a 3rd of total area and cotan can be approximated*/
-			
+
+			double aire =0;
 			for (int i = 0; i < neighbours.size(); i++) {
-				//Compute the angle with the prev point
+				
 				Vertex<Point_3> current = neighbours.get(i);				
 				Vertex<Point_3> prev = (Vertex<Point_3>) prev(i, neighbours);
-				Vector_3 vecPrev1 = (Vector_3) prev.getPoint().minus(v.getPoint());
-				Vector_3 vecPrev2 = (Vector_3) prev.getPoint().minus(current.getPoint());
-				double cosAnglePrev = (double) vecPrev1.innerProduct(vecPrev2) / (Math.sqrt((double) vecPrev1.squaredLength() * (double) vecPrev2.squaredLength()));
-				double sinAnglePrev = (double) vecPrev1.crossProduct(vecPrev2).squaredLength() / (Math.sqrt((double) vecPrev1.squaredLength() * (double) vecPrev2.squaredLength()));
-				double cotAnglePrev = cosAnglePrev / sinAnglePrev;
-				//Compute the angle with the next point
 				Vertex<Point_3> next = (Vertex<Point_3>) next(i, neighbours);
-				Vector_3 vecNext1 = (Vector_3) next.getPoint().minus(v.getPoint());
-				Vector_3 vecNext2 = (Vector_3) next.getPoint().minus(current.getPoint());
-				double cosAngleNext = (double) vecNext1.innerProduct(vecNext2) / (Math.sqrt((double) vecNext1.squaredLength() * (double) vecNext2.squaredLength()));
-				double sinAngleNext = (double) vecNext1.crossProduct(vecNext2).squaredLength() / (Math.sqrt((double) vecNext1.squaredLength() * (double) vecNext2.squaredLength()));
-				double cotAngleNext = cosAngleNext / sinAngleNext;
-				M.set(v.index, current.index, (cotAnglePrev + cotAngleNext) / 2 );
-				//Compute the circumcenter corresponding to the triangle with the prev point
-				Vector_3 a = (Vector_3) v.getPoint().minus(prev.getPoint());
-				Vector_3 b = (Vector_3) v.getPoint().minus(current.getPoint());
-				Point_3 circumcenter = v.getPoint();
-				circumcenter.translateOf(
-								a.multiplyByScalar(b.squaredLength())
-								.opposite()
-								.sum(b.multiplyByScalar(a.squaredLength()))
-								.crossProduct((a.crossProduct(b)))
-						.multiplyByScalar(1/(2. * (double) a.crossProduct(b).squaredLength())));
-				circumcenters.add(circumcenter);
+
+				
+				double d02 = (double)( v.getPoint().minus(current.getPoint()).squaredLength());
+				double d12 = (double)( v.getPoint().minus(prev.getPoint()).squaredLength());
+				double d22 = (double)( prev.getPoint().minus(current.getPoint()).squaredLength());
+				double d32 = (double)( v.getPoint().minus(next.getPoint()).squaredLength());
+				double d42 = (double)( next.getPoint().minus(current.getPoint()).squaredLength());
+				
+				double pA1 = 0.5*(Math.sqrt(d02)+Math.sqrt(d12)+Math.sqrt(d22));
+				
+				double A1  = 0.25 * Math.sqrt(pA1*(pA1-d02)*(pA1-d12)*(pA1-d22));
+				
+				double pA2 = 0.5*(Math.sqrt(d02)+Math.sqrt(d32)+Math.sqrt(d42));
+				
+				double A2  = 0.25 * Math.sqrt(pA2*(pA2-d02)*(pA2-d32)*(pA2-d42));
+				
+				double wij = 1/(8*A1)*(d02-d12-d22)+1/(8*A2)*(d02-d32-d42);
+				
+				M.set(v.index, current.index, wij);
+				aire += A1;
+
+							
 			}
-			double aire = 0;
-			for (int i = 0; i < circumcenters.size(); i++) {
-				double a = Math.sqrt((double) v.getPoint().minus(circumcenters.get(i)).squaredLength());
-				double b = Math.sqrt((double) v.getPoint().minus((Point_3) next(i,circumcenters)).squaredLength());
-				double c = Math.sqrt((double) circumcenters.get(i).minus((Point_3) next(i,circumcenters)).squaredLength());
-				double p = 1/2*(a+b+c);
-				aire += 1/4 * Math.sqrt(p*(p-a)*(p-b)*(p-c));
-			}
-			aires.put(v.index, aire);
+			aires.put(v.index, aire/3);
+			
 		}
 
 		CompRowMatrix L = new CompRowMatrix(n,n, m);
-		for (int i = 0; i < polyhedron3D.vertices.size(); i++) {
+		for (int i = 0; i < n; i++) {
 			double si = aires.get(i);
+			L.set(i,i,0);
 			for (int k = 0 ; k<m[i].length;k++){
 				int j = m[i][k];
 				double mij = M.get(i, j);
 				if(j==i){
-					L.set(i,j,0);
+					;
 				}
 				else{
 					L.set(i,j,-mij/si);
@@ -141,11 +132,17 @@ public class SurfaceMesh {
 			}
 		}
 		
+		
 		MTJSparseMatrix Laplacian = new MTJSparseMatrix(L);
 		MTJSparseEigenSolver Solver = new MTJSparseEigenSolver(Laplacian);
-		Solver.computeEigenvalueDecomposition(25); //le nombre de v propres qu'on veut
+		Solver.computeEigenvalueDecomposition(nbEigen); 
 		double[] eigenvalues = Solver.getEigenvalues();
 		double[][] eigenvectors = Solver.getEigenvectors();
+		
+		for(int i = 0; i<eigenvalues.length;i++){
+			System.out.println(eigenvalues[i]);
+		}
+		
 		
 		//normalise eigenvectors (S-inner product is norm)
 		
@@ -162,10 +159,10 @@ public class SurfaceMesh {
 		
 		//get coordinates of each points
 		
-		double[][] coordinates = new double[n][25]; //second dimension is nb of eigenvectors we have
+		double[][] coordinates = new double[n][nbEigen]; //second dimension is nb of eigenvectors we have
 		for(int i = 0; i<n; i++){
-			for(int j = 0 ; j<25; j++){
-				coordinates[i][j]=eigenvectors[j][i]/Math.sqrt(eigenvalues[j]); //this formula is supposed to reflect the eigenfunction(point)*1/sqrt(eigenvalue) continuous formula
+			for(int j = 0 ; j<nbEigen; j++){
+				coordinates[i][j]=eigenvectors[j][i]/Math.sqrt(eigenvalues[j]); //this formula is supposed to be the discrete version of the eigenfunction(point)*1/sqrt(eigenvalue) continuous formula
 			}
 		}
 		
@@ -181,7 +178,6 @@ public class SurfaceMesh {
 		}
 		
 		//compute returns histo and then MeshViewer compares several histos
-		System.out.println(histogram);
 		return histogram;
 	}
 	
