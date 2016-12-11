@@ -1,3 +1,4 @@
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -40,22 +41,11 @@ public class SurfaceMesh {
     	    	
     	this.scaleFactor=this.computeScaleFactor();
 	}
+
 	
-	public Object next(int pos, ArrayList<?> neighbours) {
-		if (pos == neighbours.size() - 1)
-			return neighbours.get(0);
-		else
-			return neighbours.get(pos + 1);
-	}
 	
-	public Object prev(int pos, ArrayList<?> neighbours) {
-		if (pos == 0)
-			return neighbours.get(neighbours.size() - 1);
-		else
-			return neighbours.get(pos - 1);
-	}
-	
-	public void compute() {
+	/* this function computes the eigenvalues and eigenvectors linked to a shape and then creates a disatnce histogram according to the methode described in the rustamov article*/
+	public double[] compute() {
 		int n = polyhedron3D.vertices.size();
 		CompRowMatrix M;
 		int[][] m = new int[n][]; // indices of non-zero entries for each row
@@ -72,7 +62,8 @@ public class SurfaceMesh {
 				neighbours.add(currentHalfedge.getVertex());
 				currentHalfedge = currentHalfedge.getOpposite().getNext();
 			}
-			m[count] = new int[neighbours.size()];
+			m[count] = new int[neighbours.size()+1];
+			m[count][neighbours.size()]=count;
 			for(int j = 0; j < neighbours.size(); j++) {
 				m[count][j]=neighbours.get(j).index; //il faut bien mettre les indices pour lesquels la matrice sera non nuls ici (Les valeurs non nulles de la matrices sont toutes celles dont les indices sont (count, index))
 			}
@@ -91,6 +82,9 @@ public class SurfaceMesh {
 //				currentHalfedge = currentHalfedge.getOpposite().getNext();
 //			}
 			ArrayList<Vertex<Point_3>> neighbours = neighboursHash.get(v);
+			
+			/*this part could have been simplified using the method described in lecture 8 : Area is a 3rd of total area and cotan can be approximated*/
+			
 			for (int i = 0; i < neighbours.size(); i++) {
 				//Compute the angle with the prev point
 				Vertex<Point_3> current = neighbours.get(i);				
@@ -130,20 +124,91 @@ public class SurfaceMesh {
 			}
 			aires.put(v.index, aire);
 		}
-		
-		//CompRowMatrix L = new CompRowMatrix(polyhedron3D.vertices.size(), polyhedron3D.vertices.size(), null);
+
+		CompRowMatrix L = new CompRowMatrix(n,n, m);
 		for (int i = 0; i < polyhedron3D.vertices.size(); i++) {
-			//aires.get(i); //si
-			//M.get(i, j); //mi,j
-			//for (int j )
-			//L.set();
+			double si = aires.get(i);
+			for (int k = 0 ; k<m[i].length;k++){
+				int j = m[i][k];
+				double mij = M.get(i, j);
+				if(j==i){
+					L.set(i,j,0);
+				}
+				else{
+					L.set(i,j,-mij/si);
+					L.set(i,i,L.get(i,i)+mij/si);
+				}
+			}
 		}
 		
 		MTJSparseMatrix Laplacian = new MTJSparseMatrix(L);
 		MTJSparseEigenSolver Solver = new MTJSparseEigenSolver(Laplacian);
-		Solver.computeEigenvalueDecomposition(20); //le nombre de v propres qu'on veut
+		Solver.computeEigenvalueDecomposition(25); //le nombre de v propres qu'on veut
 		double[] eigenvalues = Solver.getEigenvalues();
+		double[][] eigenvectors = Solver.getEigenvectors();
+		
+		//normalise eigenvectors (S-inner product is norm)
+		
+		for (int i=0; i<eigenvectors.length;i++){
+			double norm = 0;
+			for(int j = 0; j < eigenvectors[i].length;j++){
+				norm += eigenvectors[i][j]*eigenvectors[i][j]*aires.get(j);
+			}
+			for(int j = 0; j < eigenvectors[i].length;j++){
+				eigenvectors[i][j]/=norm;
+			}
+		}
+
+		
+		//get coordinates of each points
+		
+		double[][] coordinates = new double[n][25]; //second dimension is nb of eigenvectors we have
+		for(int i = 0; i<n; i++){
+			for(int j = 0 ; j<25; j++){
+				coordinates[i][j]=eigenvectors[j][i]/Math.sqrt(eigenvalues[j]); //this formula is supposed to reflect the eigenfunction(point)*1/sqrt(eigenvalue) continuous formula
+			}
+		}
+		
+		// get histogram
+		// we should get subsample, no same amout of points each time
+		
+		double[] histogram = new double[100]; // we'll need to know the max dist between two points 
+		double maxdist = 10;
+		for(int i = 0;i<n;i++){
+			for(int j = 0;j<n;j++){
+				histogram[(int)(dist(coordinates[i],coordinates[j])*100/maxdist)]+=1;
+			}
+		}
+		
+		//compute returns histo and then MeshViewer compares several histos
+		System.out.println(histogram);
+		return histogram;
 	}
+	
+	
+	public Object next(int pos, ArrayList<?> neighbours) {
+		if (pos == neighbours.size() - 1)
+			return neighbours.get(0);
+		else
+			return neighbours.get(pos + 1);
+	}
+	
+	public Object prev(int pos, ArrayList<?> neighbours) {
+		if (pos == 0)
+			return neighbours.get(neighbours.size() - 1);
+		else
+			return neighbours.get(pos - 1);
+	}
+	
+	public double dist(double[] coordinatesA, double[] coordinatesB){
+		double dist = 0;
+		for(int i = 0; i < coordinatesA.length;i++){
+			dist += Math.pow(coordinatesA[i]-coordinatesB[i],2);
+		}
+		dist = Math.sqrt(dist);
+		return dist;
+	}
+	
 	
 	/**
 	 * Draw a segment between two points
